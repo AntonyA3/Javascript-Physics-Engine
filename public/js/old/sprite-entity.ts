@@ -2,6 +2,7 @@ import {Vector2} from "./vector2";
 import {Sprite} from "./sprite";
 import {Rectangle} from "./rectangle";
 import {BasicKinematicBody} from "./basic-kinematic";
+
 class SpriteEntity{
     public position: Vector2;
     public body: BasicKinematicBody;

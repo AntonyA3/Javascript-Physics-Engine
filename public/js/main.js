@@ -1,4 +1,4 @@
-var world = require
+`var world = require
 function init() {
     setInterval(update, 1/1000);
 }
