@@ -1,0 +1,275 @@
+class Vector2{
+    
+    constructor(x, y){
+        this.x = x;
+        this.y = y;
+    }
+}
+
+Vector2.prototype.add = function(v){
+    return new Vector2(this.x + v.x, this.y + v.y);
+}
+
+Vector2.prototype.multiply = function(n){
+    return new Vector2 (this.x * n, this.y * n);
+}
+
+class Circle{
+    constructor(x,y,radius){
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+    }
+}
+
+
+
+class Rectangle{
+    constructor(x, y, width, height){
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+}
+
+Rectangle.prototype.intersect =  function(rect){
+    if (this.contains(rect.x, rect.y)){
+        return true;
+    }
+    if (this.contains(rect.x + rect.width, rect.y)){
+        return true;
+    }
+    if (this.contains(rect.x, rect.y + rect.height)){
+        return true;
+    }
+    if (this.contains(rect.x + rect.width, rect.y + rect.height)){
+        return true;
+    }
+    return false;
+}
+
+Rectangle.prototype.contains = function(x, y){
+    if (x > this.x && x < this.x + this.width &&
+        y > this.y && y < this.y + this.height){
+        return true;        
+    }else{
+        return false
+    }
+}
+
+Rectangle.prototype.top = function(){
+    return this.y;
+}
+
+Rectangle.prototype.bottom = function(){
+    return this.y + this.height;
+}
+
+Rectangle.prototype.left = function(){
+    return this.x;
+}
+
+Rectangle.prototype.right = function(){
+    return this.x + this.width;
+}
+
+Rectangle.prototype.newOffsetRectangle = function(position){
+    return new Rectangle(position.x + this.x, position.y + this.y, this.width, this.height);
+}
+
+Rectangle.prototype.newOffset = function(x, y){
+    
+    return new Rectangle(this.x + x, this.y + y, this.width, this.height);
+}
+
+////#region Sprite
+
+class Sprite{
+    constructor(position, rectangle){
+        this.position = position;
+        this._rectangle = rectangle;
+    }
+}
+
+Sprite.prototype.move = function(v){
+    this.position = this.position.add(v);
+} 
+
+Sprite.prototype.rectangle = function(){
+    return this._rectangle.newOffsetRectangle(this.position);
+}
+
+Sprite.prototype.draw = function(ctx, dt){
+    var r = this.rectangle();
+    
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.rect(r.x, r.y, r.width, r.height);
+    ctx.stroke();
+}
+
+//#endregion Sprite
+
+class Body{
+    constructor(position, velocity, rectangle){
+        this.position = position;
+        this.velocity = velocity;
+        this._rectangle = rectangle;
+    }
+}
+Body.prototype.rectangle = function(){
+    return this._rectangle.newOffsetRectangle(this.position);
+}
+
+Body.prototype.move = function(dt){
+    this.position = this.position.add(this.velocity.multiply(dt));
+}
+
+
+class SampleGameEntity{
+    constructor(sprite, body){
+        this.sprite = sprite;
+        this.body = body
+    }
+}
+
+SampleGameEntity.prototype.update = function(dt){
+    this.body.move(dt);
+
+}
+
+SampleGameEntity.prototype.draw = function(ctx, dt){
+    this.sprite.move(this.body.velocity.multiply(dt));
+    this.sprite.draw(ctx, dt);
+}
+
+
+class Line{
+    constructor(p0, p1){
+        this.p0 = p0;
+        this.p1 = p1;
+    }
+}
+
+class Path{
+    constructor(verticies){
+        this.verticies = verticies;
+    }
+}
+
+
+class GameEntityOnPath{
+    constructor(sprite, body, path){
+        this.sprite = sprite;
+        this.body = body;
+        this.path = path;
+
+        this.target = 0;
+        this.body.position = this.path.verticies[0];
+        this.sprite.position = this.path.verticies[0];
+    }
+}
+
+GameEntityOnPath.prototype.update = function(dt){
+ 
+    
+    this.sprite.position = this.body.position;
+}
+
+GameEntityOnPath.prototype.draw = function(ctx, dt){
+
+    this.sprite.draw(ctx, dt);
+
+    var path = this.path.verticies;
+    ctx.beginPath();
+    if(path.length > 1){
+        ctx.moveTo(path[0].x, path[0].y);
+        for(var i = 1; i < path.length; i++){
+            console.log(i);
+            ctx.lineTo(path[i].x, path[i].y);
+        }
+    }
+    
+    ctx.stroke();
+}
+
+class World{
+    constructor(){
+        this.drawable = [];
+        this.updatable=[];
+        this.gameobjects=[];
+        
+        this.update = function(dt){
+            this.updatable.forEach(e =>{
+                e.update(dt);
+            });
+            this.gameobjects.forEach(e =>{
+                e.update(dt);
+            })
+            
+        }
+
+        this.draw = function(ctx, dt) {
+            this.drawable.forEach(e =>{
+                e.draw(ctx, dt);
+            });
+
+            this.gameobjects.forEach(e =>{
+                e.draw(ctx, dt);
+            })
+    
+        }
+
+    
+        
+        
+    }
+
+
+}
+
+var canvas = document.getElementById("demo0");
+var ctx = canvas.getContext('2d');
+var world = new World();
+var debug = true;
+function init(){
+
+    var position = new Vector2(50,50);
+    var rectangle = new Rectangle(0,0,10,10);
+    var sprite = new Sprite(position, rectangle);
+    
+    var velocity = new Vector2(20,20);
+    var body = new Body(position, velocity, rectangle)
+    //var gameEntity = new SampleGameEntity(sprite, body);
+    //world.gameobjects.push(gameEntity);
+
+    
+    var path = new Path([
+        new Vector2(0,0), 
+        new Vector2(15,20), 
+        new Vector2(20,20), 
+        new Vector2(50,50),
+        new Vector2(25,75)]);
+    body.velocity = new Vector2(10,10)
+    var pathEntity = new GameEntityOnPath(sprite, body, path);
+    world.gameobjects.push(pathEntity);
+    setInterval(update,16);
+}
+
+function update(){
+    var dt = 1/60;
+    world.update(dt)
+    draw(dt);
+
+    
+}
+
+function draw(dt){
+    ctx.clearRect(0,0,canvas.clientWidth, canvas.height);
+    world.draw(ctx,dt);
+}
+

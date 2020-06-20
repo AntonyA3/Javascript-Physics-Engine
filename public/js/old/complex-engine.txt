@@ -1,0 +1,196 @@
+
+/**
+ * Vector 2
+ */
+class Vector2{
+    
+    constructor(x, y){
+        this.x = x;
+        this.y = y;
+    }
+}
+
+Vector2.prototype.add = function(v){
+    return new Vector2(this.x + v.x, this.y + v.y);
+}
+
+
+
+Vector2.prototype.multiply = function(n){
+    return new Vector2 (this.x * n, this.y * n);
+}
+
+/**
+ * Transform
+ */
+class Transform{
+    constructor(position, rotation, scale){
+        this.position = position;
+        this.rotation = rotation;
+        this.scale = scale;
+    }
+}
+
+
+Transform.prototype.update = function(time, body){
+    this.position = this.position.add(body.velocity.multiply(time));
+    this.rotation += body.angularVelocity * time;
+}
+
+
+Transform.prototype.draw = function(ctx){
+    var position = this.position;
+    var rotation = this.rotation;
+    
+    ctx.beginPath();
+    ctx.arc(position.x, position.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    var x = position.x + 10 * Math.cos(rotation);
+    var y = position.y + 10 * Math.sin(rotation)
+
+    ctx.beginPath();
+    ctx.moveTo(position.x, position.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+}
+
+
+/**Body */
+class Body{
+    constructor(velocity, angularVelocity){
+        this.velocity = velocity;
+        this.angularVelocity = angularVelocity;
+
+    }
+}
+
+
+
+class Rectangle{
+    constructor(x, y, width, height){
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+}
+
+Rectangle.prototype.draw = function(ctx){
+    ctx.beginPath();
+    ctx.rect(this.x ,this.y ,this.width ,this.height);
+    ctx.stroke();
+}
+
+Rectangle.prototype.intersect =  function(rect){
+    if (this.contains(rect.x, rect.y)){
+        return true;
+    }
+    if (this.contains(rect.x + rect.width, rect.y)){
+        return true;
+    }
+    if (this.contains(rect.x, rect.y + rect.height)){
+        return true;
+    }
+    if (this.contains(rect.x + rect.width, rect.y + rect.height)){
+        return true;
+    }
+    return false;
+}
+
+Rectangle.prototype.contains = function(x, y){
+    if (x > this.x && x < this.x + this.width &&
+        y > this.y && y < this.y + this.height){
+        return true;        
+    }else{
+        return false
+    }
+}
+
+Rectangle.prototype.setPosition = function(x, y){
+    this.x = x;
+    this.y = y;
+}
+
+class RidgedBody{
+    constructor(transform, body, boundingBox){
+        this.transform = transform;
+        this.body = body;
+        this.boundingBox = boundingBox;
+    }
+
+}
+
+RidgedBody.prototype.update = function(time){
+    this.transform.update(time, this.body);
+}
+
+RidgedBody.prototype.draw = function(ctx){
+    
+    this.transform.draw(ctx);
+    var position = this.transform.position;
+    var rotation = this.transform.rotation;
+    var shape = this.boundingBox;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(position.x, position.y);
+    ctx.rotate(rotation);
+
+    ctx.beginPath();
+    ctx.rect(shape.x ,shape.y ,shape.width ,shape.height);
+    ctx.stroke();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+class PhysicsEngine{
+    constructor(){
+        this.physicsObjects = [];
+    }
+}
+
+PhysicsEngine.prototype.add = function(physicsItem){
+    this.physicsObjects.push(physicsItem);
+}
+
+PhysicsEngine.prototype.update = function(time){
+    for (var i = 0; i < this.physicsObjects.length; i++){
+        this.physicsObjects[i].update(time);
+    }
+}
+
+PhysicsEngine.prototype.draw = function(ctx){
+    for (var i = 0; i < this.physicsObjects.length; i++){
+        this.physicsObjects[i].draw(ctx);
+    }
+}
+
+var canvas = document.getElementById("demo0");
+var ctx = canvas.getContext('2d');
+
+var t = new Transform(new Vector2(50,50), Math.PI / 100, new Vector2(1,1));
+var b = new Body(new Vector2(0,0), Math.PI / 4);
+var s = new Rectangle(-20,-20,40,40);
+var rb = new RidgedBody(t,b,s);
+var pEngine = new PhysicsEngine();
+function init(){
+    pEngine.add(rb);
+    setInterval(update,16);
+}
+
+function update(){
+    var time = 1/60;
+    pEngine.update(time);
+    console.log(pEngine);
+    draw();
+    
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.clientWidth, canvas.height);
+    pEngine.draw(ctx);
+
+
+}
+
+
